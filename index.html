@@ -676,7 +676,7 @@
 <script>
 // ===== 版本 =====
 // 每次發版要同步：這裡、sw.js 的 CACHE、CHANGELOG.md 最上面那版（test_homie.mjs 會檢查三者一致）
-const APP_VERSION = 'v0.17.1';
+const APP_VERSION = 'v0.17.2';
 
 // ===== STATE =====
 let hwImages = [], rdImages = [];
@@ -697,6 +697,29 @@ function lsGet(k, d = '') { try { const v = localStorage.getItem(k); return v ==
 function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 
 // ===== PROVIDER CONFIG =====
+// 模型清單：2026-11-19 依三家官方模型頁更新
+// 各供應商可選模型清單（第一個為預設）
+const GEMINI_MODELS = [
+  { value: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash（預設・推薦）' },
+  { value: 'gemini-3.5-flash-lite', label: 'Gemini 3.5 Flash-Lite（最快・最省）' },
+  { value: 'gemini-4-hydrogen', label: 'Gemini 4 Hydrogen（新一代・均衡）' },
+  { value: 'gemini-4-carbon', label: 'Gemini 4 Carbon（最強・較貴）' },
+];
+
+const CLAUDE_MODELS = [
+  { value: 'claude-haiku-4-5', label: 'Claude Haiku 4.5（快速・最省）' },
+  { value: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5（推薦・均衡）' },
+  { value: 'claude-opus-5-5', label: 'Claude Opus 5.5（很強・較貴）' },
+  { value: 'claude-fable-5-1', label: 'Claude Fable 5.1（最強・很貴）' },
+];
+
+const OPENAI_MODELS = [
+  { value: 'gpt-6.1-terra', label: 'GPT-6.1 Terra（推薦・擅長看圖）' },
+  { value: 'gpt-6-luna', label: 'GPT-6 Luna（最快・最省）' },
+  { value: 'gpt-6.2-sol', label: 'GPT-6.2 Sol（均衡）' },
+  { value: 'gpt-6.2-astra', label: 'GPT-6.2 Astra（最強・很貴）' },
+];
+
 const PROVIDERS = {
   gemini: {
     name: 'Gemini',
@@ -705,10 +728,7 @@ const PROVIDERS = {
     linkUrl: 'https://aistudio.google.com/app/apikey',
     linkText: 'Gemini API Key',
     desc: '免費申請，資料僅傳送至 Google，不經過本站',
-    models: [
-      { value: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash（預設・推薦）', cost: '~$0.002 / 次' },
-      { value: 'gemini-3.7-flash', label: 'Gemini 3.7 Flash（備用）',       cost: '~$0.002 / 次' },
-    ]
+    models: GEMINI_MODELS
   },
   claude: {
     name: 'Claude',
@@ -717,11 +737,7 @@ const PROVIDERS = {
     linkUrl: 'https://console.anthropic.com/',
     linkText: 'Claude API Key',
     desc: 'Anthropic Console 申請，資料僅傳送至 Anthropic',
-    models: [
-      { value: 'claude-haiku-4-5',  label: 'Claude Haiku 4.5（快速・最省）',  cost: '~$0.001 / 次' },
-      { value: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5（推薦・均衡）', cost: '~$0.004 / 次' },
-      { value: 'claude-opus-5-5',   label: 'Claude Opus 5.5（最強・較貴）',   cost: '~$0.008 / 次' },
-    ]
+    models: CLAUDE_MODELS
   },
   openai: {
     name: 'OpenAI',
@@ -730,12 +746,7 @@ const PROVIDERS = {
     linkUrl: 'https://platform.openai.com/api-keys',
     linkText: 'OpenAI API Key',
     desc: 'OpenAI Platform 申請，資料僅傳送至 OpenAI',
-    models: [
-      { value: 'gpt-5.6-luna', label: 'GPT-5.6 Luna（推薦・均衡）', cost: '~$0.003 / 次'  },
-      { value: 'gpt-5.4-nano', label: 'GPT-5.4 Nano（最快・最省）', cost: '~$0.0007 / 次' },
-      { value: 'gpt-5.6-sol',  label: 'GPT-5.6 Sol（最強・較貴）',  cost: '~$0.017 / 次'  },
-      { value: 'gpt-5.4-mini', label: 'GPT-5.4 Mini（穩定・省）',   cost: '~$0.0025 / 次' },
-    ]
+    models: OPENAI_MODELS
   }
 };
 
@@ -1061,13 +1072,12 @@ function onModelChange() {
   updateCostBadge();
 }
 
+// 設定裡的費用標示：依單價表估算一次解題（約 3000 輸入、2000 輸出 tokens）
 function updateCostBadge() {
-  const model = getSelectedModel();
   const badge = document.getElementById('costBadge');
   if (!badge) return;
-  const cfg = PROVIDERS[currentProvider];
-  const m = cfg.models.find(x => x.value === model);
-  if (m) badge.textContent = m.cost;
+  const usd = estCostPerCall(getSelectedModel());
+  badge.textContent = usd === null ? '' : `~${fmtUsd(usd)} / 次`;
 }
 
 // ===== UNIFIED AI CALL（SSE 串流）=====
@@ -1194,8 +1204,8 @@ async function callClaude(prompt, images, key, onChunk, signal) {
   // Sonnet 5.5／Opus 5.5 的思考（thinking）預設開啟且關不掉，思考 token 也算在 max_tokens 內，
   // 上限開大避免答案被吃掉（只有實際產生的才計費）。
   const body = { model, max_tokens: 32000, stream: true, messages: [{ role: 'user', content }] };
-  // 5.5 系列有安全分類器，偶爾會誤擋；開啟伺服器端備援：被擋時自動改用官方建議的模型重答
-  if (/-5-5$/.test(model)) {
+  // 5.5 系列與 Fable 5.1 有安全分類器，偶爾會誤擋；開啟伺服器端備援：被擋時自動改用官方建議的模型重答
+  if (/-5-5$|^claude-fable-5-1$/.test(model)) {
     headers['anthropic-beta'] = 'server-side-fallback-2026-07-01';
     body.fallbacks = 'default';
   }
@@ -2033,21 +2043,68 @@ function deleteThumbs(tsList) {
 }
 
 // ===== 實際花費（依 API 回傳的用量 × 公告單價估算）=====
-// 單價：美元／每百萬 tokens [輸入, 輸出]。2026-10 公告價；輸出含思考 token。不含 AI 語音。
+// 單價：2026-11-19 依官方價目表；輸出含思考 token；不含 AI 語音。已公告的漲價依日期自動套用
+// 模型單價表（美元／每百萬 tokens），依生效日由舊到新排列
 const PRICES = {
-  'gemini-3.8-flash': [0.75, 3.75], 'gemini-3.7-flash': [0.75, 3.75],
-  'claude-haiku-4-5': [1, 5], 'claude-sonnet-5-5': [2, 10], 'claude-opus-5-5': [4, 20],
-  'gpt-5.6-luna': [1, 6], 'gpt-5.4-nano': [0.2, 1.25], 'gpt-5.6-sol': [5, 30], 'gpt-5.4-mini': [0.75, 4.5]
+  'gemini-3.8-flash': [
+    { from: null, p: [0.75, 3.75] },
+    { from: '2027-01-01', p: [1.5, 7.5] },
+  ],
+  'gemini-3.5-flash-lite': [{ from: null, p: [0.3, 2.5] }],
+  'gemini-4-hydrogen': [{ from: null, p: [1.5, 7.5] }],
+  'gemini-4-carbon': [
+    { from: null, p: [2, 10] },
+    { from: '2026-12-01', p: [4, 20] },
+  ],
+  'claude-haiku-4-5': [{ from: null, p: [1, 5] }],
+  'claude-sonnet-5-5': [{ from: null, p: [2, 10] }],
+  'claude-opus-5-5': [{ from: null, p: [4, 20] }],
+  'claude-fable-5-1': [{ from: null, p: [10, 50] }],
+  'gpt-6.1-terra': [{ from: null, p: [1, 5] }],
+  'gpt-6-luna': [{ from: null, p: [0.1, 0.5] }],
+  'gpt-6.2-sol': [{ from: null, p: [2, 10] }],
+  'gpt-6.2-astra': [{ from: null, p: [8, 40] }],
 };
+
+// 取得指定日期生效的 [輸入, 輸出] 單價
+function priceFor(model, date = new Date()) {
+  const tiers = PRICES[model];
+  if (!tiers) return null;
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  const day = `${y}-${m}-${d}`;
+  let active = null;
+  for (const tier of tiers) {
+    if (tier.from === null || tier.from <= day) active = tier.p;
+  }
+  return active;
+}
+
+// 依 token 用量計算美元費用
+function costOf(model, usage) {
+  if (!usage) return null;
+  const price = priceFor(model);
+  if (!price) return null;
+  const input = usage.input ?? 0;
+  const output = usage.output ?? 0;
+  return (input * price[0] + output * price[1]) / 1e6;
+}
+
+// 估算單次呼叫費用（約 3000 輸入、2000 輸出 tokens）
+function estCostPerCall(model) {
+  return costOf(model, { input: 3000, output: 2000 });
+}
+
+// 格式化美元金額
+function fmtUsd(usd) {
+  if (usd === 0) return '$0.00';
+  return usd < 0.01 ? `$${usd.toPrecision(2)}` : `$${usd.toFixed(2)}`;
+}
+
 const USD_TWD = 32;   // 粗估匯率
 let lastUsage = null;  // 這次呼叫的 { input, output } tokens
 let lastCost = null;   // 這次呼叫約多少美元
-
-function costOf(model, usage) {
-  const p = PRICES[model];
-  if (!p || !usage) return null;
-  return (usage.input * p[0] + usage.output * p[1]) / 1e6;
-}
 
 function monthKey(d = new Date()) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
 
@@ -3131,7 +3188,7 @@ const TTS_ENGINES = {
     voices: [['marin', '自然（推薦）', 'f'], ['coral', '溫暖', 'f'], ['nova', '明亮', 'f'], ['shimmer', '柔和', 'f'],
              ['sage', '平靜', 'f'], ['cedar', '沉穩（推薦）', 'm'], ['ash', '清晰', 'm'], ['echo', '柔和', 'm'],
              ['onyx', '低沉', 'm']],
-    note: 'AI 語音會使用你的 OpenAI API 額度（約 US$0.015／分鐘），同一句只產生一次。'
+    note: 'AI 語音會使用你的 OpenAI API 額度（約 US$0.015／分鐘），同一句只產生一次。注意：OpenAI 這個語音模型將於 2027/1/6 停用，建議改用 Gemini 語音。'
   }
 };
 

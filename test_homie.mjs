@@ -76,7 +76,8 @@ window.__T = {
   lastCost: () => lastCost,
   wordMode: () => wordMode,
   shadow: () => shadowState,
-  setTruncated: (v) => { lastResponseTruncated = v; }
+  setTruncated: (v) => { lastResponseTruncated = v; },
+  providers: () => PROVIDERS
 };`);
 
 const T = win.__T;
@@ -860,7 +861,8 @@ win.localStorage.setItem('homie_gemini_key', 'AIza-test');
 T.setProvider('gemini'); win.switchProvider('gemini', true);
 win.fetch = async () => sse('{"candidates":[{"content":{"parts":[{"text":"OK"}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":2000,"candidatesTokenCount":500,"thoughtsTokenCount":500}}');
 await T.callReal('p', [], null);
-const gCost = (2000 * 0.75 + 1000 * 3.75) / 1e6;
+const g38 = win.priceFor('gemini-3.8-flash');
+const gCost = (2000 * g38[0] + 1000 * g38[1]) / 1e6;
 check('Gemini：依用量（含思考 token）算花費', Math.abs(T.lastCost() - gCost) < 1e-12, String(T.lastCost()));
 let usage = JSON.parse(win.localStorage.getItem('homie_usage'));
 const mk1 = Object.keys(usage)[0];
@@ -874,7 +876,7 @@ win.fetch = async () => sseMulti([
   { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 400 } }
 ]);
 await T.callReal('p', [], null);
-check('Claude：讀 message_start／message_delta 的用量', Math.abs(T.lastCost() - (1000 * 1 + 400 * 5) / 1e6) < 1e-12, String(T.lastCost()));
+check('Claude：讀 message_start／message_delta 的用量', Math.abs(T.lastCost() - (1000 * win.priceFor('claude-haiku-4-5')[0] + 400 * win.priceFor('claude-haiku-4-5')[1]) / 1e6) < 1e-12, String(T.lastCost()));
 // OpenAI 用量
 win.localStorage.setItem('homie_openai_key', 'sk-test');
 T.setProvider('openai'); win.switchProvider('openai', true);
@@ -885,7 +887,7 @@ win.fetch = async (url, opt) => { oaBody = JSON.parse(opt.body); return sseMulti
 ]); };
 await T.callReal('p', [], null);
 check('OpenAI：要求串流附上用量', oaBody.stream_options && oaBody.stream_options.include_usage === true);
-check('OpenAI：依用量算花費', Math.abs(T.lastCost() - (3000 * 1 + 600 * 6) / 1e6) < 1e-12, String(T.lastCost()));
+check('OpenAI：依用量算花費（預設 GPT-6.1 Terra）', oaBody.model === 'gpt-6.1-terra' && Math.abs(T.lastCost() - (3000 * 1 + 600 * 5) / 1e6) < 1e-12, String(T.lastCost()));
 usage = JSON.parse(win.localStorage.getItem('homie_usage'));
 check('本月累計 3 次', usage[mk1].calls === 3);
 win.renderUsage();
@@ -950,16 +952,16 @@ win.localStorage.setItem('homie_gemini_key', 'AIza-test');
 win.localStorage.setItem('homie_claude_key', 'sk-ant-test');
 T.setProvider('gemini'); win.switchProvider('gemini', true);
 const ms = doc.getElementById('modelSelect');
-ms.value = 'gemini-3.7-flash';
+ms.value = 'gemini-4-hydrogen';
 win.onModelChange();
 T.setProvider('claude'); win.switchProvider('claude', true);
 ms.value = 'claude-opus-5-5';
 win.onModelChange();
 T.setProvider('gemini'); win.switchProvider('gemini', true);
-check('切回 Gemini 仍是選過的 3.7 Flash', ms.value === 'gemini-3.7-flash', ms.value);
+check('切回 Gemini 仍是選過的 Gemini 4 Hydrogen', ms.value === 'gemini-4-hydrogen', ms.value);
 T.setProvider('claude'); win.switchProvider('claude', true);
 check('切回 Claude 仍是選過的 Opus 5.5', ms.value === 'claude-opus-5-5', ms.value);
-check('費用標示跟著換', doc.getElementById('costBadge').textContent === '~$0.008 / 次');
+check('費用標示跟著換', doc.getElementById('costBadge').textContent === '~$0.05 / 次', doc.getElementById('costBadge').textContent);
 win.localStorage.setItem('homie_model_claude', 'claude-old-removed');
 win.switchProvider('claude', true);
 check('記住的模型已下架就用預設', ms.value === 'claude-haiku-4-5');
@@ -1078,6 +1080,30 @@ T.setRdImages(1);
 T.stubCallAI(async () => { T.setTruncated(true); return '===第1頁===\n小熊。'; });
 await win.runReading();
 check('繪本辨識被截斷時提醒', [...doc.querySelectorAll('#rdResults .notice-box')].some(n => n.textContent.includes('可能沒有辨識完')));
+
+// ── 26. 模型清單與單價（2026-11）──────────────────────
+const ids = (p) => T.providers()[p].models.map(m => m.value).join();
+check('Gemini 清單', ids('gemini') === 'gemini-3.8-flash,gemini-3.5-flash-lite,gemini-4-hydrogen,gemini-4-carbon', ids('gemini'));
+check('Claude 清單', ids('claude') === 'claude-haiku-4-5,claude-sonnet-5-5,claude-opus-5-5,claude-fable-5-1', ids('claude'));
+check('OpenAI 清單', ids('openai') === 'gpt-6.1-terra,gpt-6-luna,gpt-6.2-sol,gpt-6.2-astra', ids('openai'));
+check('清單裡每個模型都有單價', ['gemini', 'claude', 'openai'].every(p => T.providers()[p].models.every(m => win.priceFor(m.value))));
+check('Gemini 4 Carbon 12/1 漲價', eq(win.priceFor('gemini-4-carbon', new Date(2026, 10, 30)), [2, 10]) && eq(win.priceFor('gemini-4-carbon', new Date(2026, 11, 1)), [4, 20]));
+check('Gemini 3.8 Flash 2027/1/1 漲價', eq(win.priceFor('gemini-3.8-flash', new Date(2026, 11, 31)), [0.75, 3.75]) && eq(win.priceFor('gemini-3.8-flash', new Date(2027, 0, 1)), [1.5, 7.5]));
+check('沒有單價的模型回傳 null', win.priceFor('gemini-3.7-flash') === null && win.costOf('gemini-3.7-flash', { input: 1, output: 1 }) === null);
+check('金額格式', win.fmtUsd(0.0043) === '$0.0043' && win.fmtUsd(0.00065) === '$0.00065' && win.fmtUsd(0.13) === '$0.13');
+win.localStorage.setItem('homie_model_gemini', 'gemini-3.7-flash');
+T.setProvider('gemini'); win.switchProvider('gemini', true);
+check('以前選的 3.7 Flash 已下架，自動改用 3.8 Flash', doc.getElementById('modelSelect').value === 'gemini-3.8-flash');
+win.localStorage.removeItem('homie_model_gemini');
+win.localStorage.setItem('homie_claude_key', 'sk-ant-test');
+T.setProvider('claude'); win.switchProvider('claude', true);
+doc.getElementById('modelSelect').value = 'claude-fable-5-1';
+let fbH = null, fbB = null;
+win.fetch = async (url, opt) => { fbH = opt.headers; fbB = JSON.parse(opt.body); return sseMulti([{ type: 'message_delta', delta: { stop_reason: 'end_turn' } }]); };
+await T.callReal('p', [], null);
+check('Fable 5.1 也開啟備援', fbB.model === 'claude-fable-5-1' && fbB.fallbacks === 'default' && fbH['anthropic-beta'] === 'server-side-fallback-2026-07-01');
+check('Fable 5.1 不送 thinking 參數', fbB.thinking === undefined);
+T.setProvider('gemini'); win.switchProvider('gemini', true);
 
 // ── 22. 版本號一致 ───────────────────────────────────
 const ver = T.version();

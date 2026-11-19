@@ -4,6 +4,22 @@
 
 ---
 
+## v0.17.2 — 2026-11-19
+
+### 修正
+- **AI 模型清單更新到最新**（依三家官方模型頁與價目表，2026-11-19）
+  - Gemini：3.8 Flash（預設）、**3.5 Flash-Lite**（最快最省）、**Gemini 4 Hydrogen**、**Gemini 4 Carbon**（最強）；移除已不在官方清單上的 3.7 Flash
+  - Claude：Haiku 4.5、Sonnet 5.5、Opus 5.5，新增 **Fable 5.1**（最強、很貴）；Fable 5.1 也開啟「被擋時自動換模型重答」的備援
+  - OpenAI：改為 GPT-6 系列 — **GPT-6.1 Terra**（新預設，擅長看圖）、**GPT-6 Luna**（最省）、**GPT-6.2 Sol**、**GPT-6.2 Astra**（最強）；移除 GPT-5.x（GPT-5.4 Nano 已公告停用）
+  - 以前選的模型若已不在清單（例如 Gemini 3.7 Flash），自動改用該家的預設模型
+- **單價表改為依日期計價**：已公告的漲價會自動套用 — Gemini 4 Carbon 2026-12-01 起 $4／$20、Gemini 3.8 Flash 2027-01-01 起 $1.50／$7.50
+- 設定裡「約多少錢一次」改由單價表統一計算（以一次約 3,000 輸入、2,000 輸出 tokens 估算），不再是各自手寫的數字
+- OpenAI 語音選項加註：`gpt-4o-mini-tts` 將於 2027-01-06 停用，建議改用 Gemini 語音
+- README 模型費用表、`OPTIMIZATION_REVIEW.md` 待辦同步更新
+- 模型清單與單價計算程式由 Gemini 4 Hydrogen 起草，Claude 審查後套用
+
+---
+
 ## v0.17.1 — 2026-10-15
 
 ### 移除
