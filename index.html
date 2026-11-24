@@ -676,7 +676,7 @@
 <script>
 // ===== 版本 =====
 // 每次發版要同步：這裡、sw.js 的 CACHE、CHANGELOG.md 最上面那版（test_homie.mjs 會檢查三者一致）
-const APP_VERSION = 'v0.17.2';
+const APP_VERSION = 'v0.17.3';
 
 // ===== STATE =====
 let hwImages = [], rdImages = [];
@@ -697,20 +697,20 @@ function lsGet(k, d = '') { try { const v = localStorage.getItem(k); return v ==
 function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 
 // ===== PROVIDER CONFIG =====
-// 模型清單：2026-11-19 依三家官方模型頁更新
+// 模型清單：Gemini／OpenAI 2026-11-19、Claude 2026-11-24 依官方模型頁更新
 // 各供應商可選模型清單（第一個為預設）
 const GEMINI_MODELS = [
   { value: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash（預設・推薦）' },
   { value: 'gemini-3.5-flash-lite', label: 'Gemini 3.5 Flash-Lite（最快・最省）' },
   { value: 'gemini-4-hydrogen', label: 'Gemini 4 Hydrogen（新一代・均衡）' },
-  { value: 'gemini-4-carbon', label: 'Gemini 4 Carbon（最強・較貴）' },
+  { value: 'gemini-4-carbon', label: 'Gemini 4 Carbon（最強・需付費 Key）' },
 ];
 
 const CLAUDE_MODELS = [
-  { value: 'claude-haiku-4-5', label: 'Claude Haiku 4.5（快速・最省）' },
+  { value: 'claude-haiku-5-5', label: 'Claude Haiku 5.5（快速・最省）' },
   { value: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5（推薦・均衡）' },
   { value: 'claude-opus-5-5', label: 'Claude Opus 5.5（很強・較貴）' },
-  { value: 'claude-fable-5-1', label: 'Claude Fable 5.1（最強・很貴）' },
+  { value: 'claude-fable-5-2', label: 'Claude Fable 5.2（最強・很貴）' },
 ];
 
 const OPENAI_MODELS = [
@@ -1201,11 +1201,12 @@ async function callClaude(prompt, images, key, onChunk, signal) {
     'anthropic-dangerous-direct-browser-access': 'true',
     'content-type': 'application/json'
   };
-  // Sonnet 5.5／Opus 5.5 的思考（thinking）預設開啟且關不掉，思考 token 也算在 max_tokens 內，
+  // 5.5 系列與 Fable 5.2 的思考（thinking）預設開啟，思考 token 也算在 max_tokens 內，
   // 上限開大避免答案被吃掉（只有實際產生的才計費）。
   const body = { model, max_tokens: 32000, stream: true, messages: [{ role: 'user', content }] };
-  // 5.5 系列與 Fable 5.1 有安全分類器，偶爾會誤擋；開啟伺服器端備援：被擋時自動改用官方建議的模型重答
-  if (/-5-5$|^claude-fable-5-1$/.test(model)) {
+  // Sonnet／Opus 5.5 與 Fable 5.2 有安全分類器，偶爾會誤擋；開啟伺服器端備援：被擋時自動改用官方建議的模型重答
+  // （Haiku 5.5 官方不支援伺服器端備援，不送）
+  if (/^claude-(sonnet-5-5|opus-5-5|fable-5-2)$/.test(model)) {
     headers['anthropic-beta'] = 'server-side-fallback-2026-07-01';
     body.fallbacks = 'default';
   }
@@ -2043,7 +2044,7 @@ function deleteThumbs(tsList) {
 }
 
 // ===== 實際花費（依 API 回傳的用量 × 公告單價估算）=====
-// 單價：2026-11-19 依官方價目表；輸出含思考 token；不含 AI 語音。已公告的漲價依日期自動套用
+// 單價：Gemini／OpenAI 2026-11-19、Claude 2026-11-24 依官方價目表；輸出含思考 token；不含 AI 語音。已公告的漲價依日期自動套用
 // 模型單價表（美元／每百萬 tokens），依生效日由舊到新排列
 const PRICES = {
   'gemini-3.8-flash': [
@@ -2056,10 +2057,10 @@ const PRICES = {
     { from: null, p: [2, 10] },
     { from: '2026-12-01', p: [4, 20] },
   ],
-  'claude-haiku-4-5': [{ from: null, p: [1, 5] }],
+  'claude-haiku-5-5': [{ from: null, p: [0.1, 0.5] }],   // 提示超過 10 萬 tokens 才會變貴，這裡用不到
   'claude-sonnet-5-5': [{ from: null, p: [2, 10] }],
   'claude-opus-5-5': [{ from: null, p: [4, 20] }],
-  'claude-fable-5-1': [{ from: null, p: [10, 50] }],
+  'claude-fable-5-2': [{ from: null, p: [8, 40] }],
   'gpt-6.1-terra': [{ from: null, p: [1, 5] }],
   'gpt-6-luna': [{ from: null, p: [0.1, 0.5] }],
   'gpt-6.2-sol': [{ from: null, p: [2, 10] }],
@@ -3165,14 +3166,13 @@ function speakBrowser(item, session, done) {
 }
 
 
-// ===== AI 自然語音（Gemini／OpenAI TTS）=====
-// 一樣是瀏覽器直接呼叫供應商 API、用使用者自己的 Key，不經過任何伺服器。
+// ===== AI 自然語音（Gemini TTS）=====
+// 一樣是瀏覽器直接呼叫 Google API、用使用者自己的 Key，不經過任何伺服器。
 // 一句產生一段音檔：點哪句播哪句、暫停續播都很準；播放時順手預先產生後兩句，聽起來不會一句一頓。
 const GEMINI_TTS_MODEL = 'gemini-3.8-flash-tts';
-const OPENAI_TTS_MODEL = 'gpt-4o-mini-tts';
 let TTS_RETRY_MS = 1500;   // 遇到 429（太頻繁）時的等待基數
 
-// voices：[音色 ID, 中文描述, 性別 f／m]。Gemini 性別依 Google 官方音色表；OpenAI 官方未標示，依一般聽感。
+// voices：[音色 ID, 中文描述, 性別 f／m]。性別依 Google 官方音色表。
 // 智慧陪讀的「小老師」自動用和旁白相反性別的第一個聲音，一聽就分得出來
 const TTS_ENGINES = {
   browser: { label: '📱 手機內建語音（免費）' },
@@ -3182,13 +3182,6 @@ const TTS_ENGINES = {
              ['Despina', '柔順', 'f'], ['Achird', '親切', 'm'], ['Puck', '開朗', 'm'], ['Charon', '沉穩', 'm'],
              ['Algieba', '柔和', 'm'], ['Iapetus', '清晰', 'm']],
     note: 'AI 語音會使用你的 Gemini API 額度，同一句只產生一次。'
-  },
-  openai: {
-    label: '✨ AI 自然語音・OpenAI',
-    voices: [['marin', '自然（推薦）', 'f'], ['coral', '溫暖', 'f'], ['nova', '明亮', 'f'], ['shimmer', '柔和', 'f'],
-             ['sage', '平靜', 'f'], ['cedar', '沉穩（推薦）', 'm'], ['ash', '清晰', 'm'], ['echo', '柔和', 'm'],
-             ['onyx', '低沉', 'm']],
-    note: 'AI 語音會使用你的 OpenAI API 額度（約 US$0.015／分鐘），同一句只產生一次。注意：OpenAI 這個語音模型將於 2027/1/6 停用，建議改用 Gemini 語音。'
   }
 };
 
@@ -3213,8 +3206,11 @@ function populateEngines() {
     opt.disabled = !ok;
     sel.add(opt);
   });
-  // 沒選過：有 Gemini Key 就預設用 Gemini AI 語音，否則用手機內建（OpenAI 要錢，需自己選）
-  const saved = lsGet('homie_tts_engine', engineKey('gemini') ? 'gemini' : 'browser');
+  // 沒選過：有 Gemini Key 就預設用 Gemini AI 語音，否則用手機內建。
+  // 以前選過、現在已移除的引擎（OpenAI）視為沒選過
+  const auto = engineKey('gemini') ? 'gemini' : 'browser';
+  const stored = lsGet('homie_tts_engine', auto);
+  const saved = TTS_ENGINES[stored] ? stored : auto;
   sel.value = saved === 'browser' || engineKey(saved) ? saved : 'browser';
 }
 
@@ -3242,7 +3238,7 @@ function cloudVoice(engine, role) {
   return cfg.voices.find(([, , vg]) => vg !== g)[0];
 }
 
-// 語氣指示（兩家都是用自然語言描述想要的唸法，不會被唸出來）
+// 語氣指示（用自然語言描述想要的唸法，不會被唸出來）
 function cloudStyle(role) {
   if (role === 'teacher' || activePrefix === 'hw') return '像親切的台灣國小老師在跟小朋友說話：溫柔、有耐心、帶點笑意，語速稍慢。使用台灣國語口音（Taiwanese Mandarin accent）。';
   if (currentReadLang === 'en') return 'Warm, clear, gentle storytelling voice, slightly slow, like reading a picture book aloud to a young child.';
@@ -3272,7 +3268,7 @@ async function synthCloud(engine, text, voice, style) {
   const key = engineKey(engine);
   for (let attempt = 0; ; attempt++) {
     try {
-      return engine === 'gemini' ? await ttsGemini(text, voice, style, key) : await ttsOpenAI(text, voice, style, key);
+      return await ttsGemini(text, voice, style, key);
     } catch (e) {
       if (e.status === 429 && attempt < 2) { await new Promise(r => setTimeout(r, TTS_RETRY_MS * (attempt + 1))); continue; }
       throw e;
@@ -3306,16 +3302,6 @@ async function ttsGemini(text, voice, style, key) {
   const bytes = b64ToBytes(audio.data);
   // 預設回傳 WAV；若拿到的是沒有檔頭的原始 PCM（24kHz／16-bit／單聲道），自己補上 WAV 檔頭
   return isWav(bytes) ? new Blob([bytes], { type: 'audio/wav' }) : pcmToWav(bytes, 24000);
-}
-
-async function ttsOpenAI(text, voice, style, key) {
-  const res = await fetch('https://api.openai.com/v1/audio/speech', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: OPENAI_TTS_MODEL, voice, input: text, instructions: style, response_format: 'mp3' })
-  });
-  if (!res.ok) throw await ttsError(res, 'OpenAI 語音');
-  return await res.blob();
 }
 
 function b64ToBytes(b64) {

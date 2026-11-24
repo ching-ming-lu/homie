@@ -206,7 +206,7 @@ win.switchProvider('claude', true);
 await T.callReal('p', [], null);
 check('Claude 仍使用 max_tokens', bodies[0].body.max_tokens > 0);
 check('Claude stop_reason=max_tokens 判定為截斷', T.truncated() === true);
-check('Claude 預設模型為 Haiku 4.5', bodies[0].body.model === 'claude-haiku-4-5');
+check('Claude 預設模型為 Haiku 5.5', bodies[0].body.model === 'claude-haiku-5-5');
 check('Haiku 不送備援參數', bodies[0].body.fallbacks === undefined);
 check('max_tokens 開到 32000（容納思考 token）', bodies[0].body.max_tokens === 32000);
 
@@ -322,7 +322,7 @@ check('壓縮快慢不同，頁序仍照選取順序', T.rdImages().map(i => i.d
 win.localStorage.clear();
 win.renderReadingResult(BOOK, 'zh');
 const engSel = win.document.getElementById('ttsEngine');
-check('沒有 Key 時 AI 語音選項停用', [...engSel.options].filter(o => o.disabled).length === 2 && engSel.value === 'browser');
+check('沒有 Key 時 AI 語音選項停用', [...engSel.options].filter(o => o.disabled).length === 1 && engSel.value === 'browser');
 
 win.localStorage.setItem('homie_gemini_key', 'AIza-test');
 win.renderReadingResult(BOOK, 'zh');
@@ -394,25 +394,26 @@ check('失敗時顯示原因', win.document.getElementById('plNotice').textConte
 check('失敗只切換畫面、不改存檔設定', win.document.getElementById('ttsEngine').value === 'browser' && win.localStorage.getItem('homie_tts_engine') === null);
 win.stopTTS(); await sleep(20);
 
-// OpenAI TTS 參數
+// 以前選過 OpenAI 語音（已移除）→ 有 Gemini Key 就自動改用 Gemini，不會卡住
 win.localStorage.setItem('homie_openai_key', 'sk-test');
 win.localStorage.setItem('homie_tts_engine', 'openai');
-win.renderReadingResult('===第1頁===\nOpenAI 這一句。', 'zh');
-let oa = null;
-win.fetch = async (url, opt) => { oa = { url, headers: opt.headers, body: JSON.parse(opt.body) };
-  return { ok: true, status: 200, blob: async () => new win.Blob(['x'], { type: 'audio/mpeg' }) }; };
-win.playFrom(0);
-await sleep(30);
-check('OpenAI TTS 端點與模型', oa.url === 'https://api.openai.com/v1/audio/speech' && oa.body.model === 'gpt-4o-mini-tts');
-check('OpenAI 預設音色 marin、帶語氣指示', oa.body.voice === 'marin' && oa.body.instructions.includes('台灣國語'));
-check('OpenAI 用 Bearer Key', oa.headers.Authorization === 'Bearer sk-test');
-win.stopTTS();
+win.renderReadingResult('===第1頁===\n移除後的第一句。', 'zh');
+check('語音引擎只剩手機內建與 Gemini', eq([...win.document.getElementById('ttsEngine').options].map(o => o.value), ['browser', 'gemini']));
+check('以前選 OpenAI 語音自動改用 Gemini', win.document.getElementById('ttsEngine').value === 'gemini' && win.activeEngine() === 'gemini');
+const gKeySaved = win.localStorage.getItem('homie_gemini_key');
+win.localStorage.removeItem('homie_gemini_key');
+win.populateEngines();
+check('沒有 Gemini Key 就退回手機內建', win.document.getElementById('ttsEngine').value === 'browser' && win.activeEngine() === 'browser');
+win.localStorage.setItem('homie_gemini_key', gKeySaved);
+win.localStorage.removeItem('homie_tts_engine');
 
 // 英文繪本用英文語氣
+let en = null;
+win.fetch = async (url, opt) => { en = { url, body: JSON.parse(opt.body) }; return { ok: false, status: 400, json: async () => ({}), text: async () => '' }; };
 win.renderReadingResult('===Page 1===\nThe bear is hungry.', 'en');
 win.playFrom(0);
 await sleep(30);
-check('英文繪本用英文說故事語氣', oa.body.instructions.startsWith('Warm'));
+check('英文繪本用英文說故事語氣', en.body.input[0].content[0].annotations[0].style.startsWith('Warm'));
 win.stopTTS();
 
 // ── 14. 智慧陪讀 ─────────────────────────────────────
@@ -643,8 +644,6 @@ check('音色名稱帶性別圖示', win.document.querySelector('#ttsVoice optio
 check('女聲旁白 → 小老師用男聲', win.cloudVoice('gemini', 'teacher') === 'Achird');
 win.localStorage.setItem('homie_voice_gemini', 'Puck');
 check('男聲旁白 → 小老師用女聲', win.cloudVoice('gemini', 'teacher') === 'Sulafat');
-win.localStorage.setItem('homie_voice_openai', 'cedar');
-check('OpenAI 男聲旁白 → 小老師用女聲', win.cloudVoice('openai', 'teacher') === 'marin');
 win.localStorage.removeItem('homie_voice_gemini');
 check('內建語音認得的名字標女聲', win.browserVoiceGender({ name: 'Meijia' }) === 'f' && win.browserVoiceGender({ name: 'Microsoft HsiaoChen Online (Natural)' }) === 'f');
 check('內建語音認得的名字標男聲', win.browserVoiceGender({ name: 'Microsoft Zhiwei' }) === 'm' && win.browserVoiceGender({ name: 'Google UK English Male' }) === 'm');
@@ -876,7 +875,7 @@ win.fetch = async () => sseMulti([
   { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 400 } }
 ]);
 await T.callReal('p', [], null);
-check('Claude：讀 message_start／message_delta 的用量', Math.abs(T.lastCost() - (1000 * win.priceFor('claude-haiku-4-5')[0] + 400 * win.priceFor('claude-haiku-4-5')[1]) / 1e6) < 1e-12, String(T.lastCost()));
+check('Claude：讀 message_start／message_delta 的用量', Math.abs(T.lastCost() - (1000 * win.priceFor('claude-haiku-5-5')[0] + 400 * win.priceFor('claude-haiku-5-5')[1]) / 1e6) < 1e-12, String(T.lastCost()));
 // OpenAI 用量
 win.localStorage.setItem('homie_openai_key', 'sk-test');
 T.setProvider('openai'); win.switchProvider('openai', true);
@@ -964,7 +963,7 @@ check('切回 Claude 仍是選過的 Opus 5.5', ms.value === 'claude-opus-5-5', 
 check('費用標示跟著換', doc.getElementById('costBadge').textContent === '~$0.05 / 次', doc.getElementById('costBadge').textContent);
 win.localStorage.setItem('homie_model_claude', 'claude-old-removed');
 win.switchProvider('claude', true);
-check('記住的模型已下架就用預設', ms.value === 'claude-haiku-4-5');
+check('記住的模型已下架就用預設', ms.value === 'claude-haiku-5-5');
 win.localStorage.removeItem('homie_model_claude');
 win.localStorage.removeItem('homie_model_gemini');
 T.setProvider('gemini'); win.switchProvider('gemini', true);
@@ -1084,7 +1083,7 @@ check('繪本辨識被截斷時提醒', [...doc.querySelectorAll('#rdResults .no
 // ── 26. 模型清單與單價（2026-11）──────────────────────
 const ids = (p) => T.providers()[p].models.map(m => m.value).join();
 check('Gemini 清單', ids('gemini') === 'gemini-3.8-flash,gemini-3.5-flash-lite,gemini-4-hydrogen,gemini-4-carbon', ids('gemini'));
-check('Claude 清單', ids('claude') === 'claude-haiku-4-5,claude-sonnet-5-5,claude-opus-5-5,claude-fable-5-1', ids('claude'));
+check('Claude 清單', ids('claude') === 'claude-haiku-5-5,claude-sonnet-5-5,claude-opus-5-5,claude-fable-5-2', ids('claude'));
 check('OpenAI 清單', ids('openai') === 'gpt-6.1-terra,gpt-6-luna,gpt-6.2-sol,gpt-6.2-astra', ids('openai'));
 check('清單裡每個模型都有單價', ['gemini', 'claude', 'openai'].every(p => T.providers()[p].models.every(m => win.priceFor(m.value))));
 check('Gemini 4 Carbon 12/1 漲價', eq(win.priceFor('gemini-4-carbon', new Date(2026, 10, 30)), [2, 10]) && eq(win.priceFor('gemini-4-carbon', new Date(2026, 11, 1)), [4, 20]));
@@ -1093,16 +1092,16 @@ check('沒有單價的模型回傳 null', win.priceFor('gemini-3.7-flash') === n
 check('金額格式', win.fmtUsd(0.0043) === '$0.0043' && win.fmtUsd(0.00065) === '$0.00065' && win.fmtUsd(0.13) === '$0.13');
 win.localStorage.setItem('homie_model_gemini', 'gemini-3.7-flash');
 T.setProvider('gemini'); win.switchProvider('gemini', true);
-check('以前選的 3.7 Flash 已下架，自動改用 3.8 Flash', doc.getElementById('modelSelect').value === 'gemini-3.8-flash');
+check('以前選的 3.7 Flash 已不在清單，自動改用 3.8 Flash', doc.getElementById('modelSelect').value === 'gemini-3.8-flash');
 win.localStorage.removeItem('homie_model_gemini');
 win.localStorage.setItem('homie_claude_key', 'sk-ant-test');
 T.setProvider('claude'); win.switchProvider('claude', true);
-doc.getElementById('modelSelect').value = 'claude-fable-5-1';
+doc.getElementById('modelSelect').value = 'claude-fable-5-2';
 let fbH = null, fbB = null;
 win.fetch = async (url, opt) => { fbH = opt.headers; fbB = JSON.parse(opt.body); return sseMulti([{ type: 'message_delta', delta: { stop_reason: 'end_turn' } }]); };
 await T.callReal('p', [], null);
-check('Fable 5.1 也開啟備援', fbB.model === 'claude-fable-5-1' && fbB.fallbacks === 'default' && fbH['anthropic-beta'] === 'server-side-fallback-2026-07-01');
-check('Fable 5.1 不送 thinking 參數', fbB.thinking === undefined);
+check('Fable 5.2 也開啟備援', fbB.model === 'claude-fable-5-2' && fbB.fallbacks === 'default' && fbH['anthropic-beta'] === 'server-side-fallback-2026-07-01');
+check('Fable 5.2 不送 thinking 參數', fbB.thinking === undefined);
 T.setProvider('gemini'); win.switchProvider('gemini', true);
 
 // ── 22. 版本號一致 ───────────────────────────────────

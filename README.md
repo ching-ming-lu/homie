@@ -52,7 +52,7 @@ Homie 就是為這個場景專門打造的。
 - **兩種模式**
   - 📖 純朗讀：照原文逐句唸
   - 🧑‍🏫 智慧陪讀：AI 小老師在故事中穿插講解和提問（依孩子年級調整深淺），問完會停下來等孩子回答；英文繪本由小老師用中文解釋單字
-- **AI 自然語音**（選用）：Gemini（`gemini-3.8-flash-tts`）或 OpenAI（`gpt-4o-mini-tts`），台灣國語口音語氣；失敗時自動退回手機內建語音
+- **AI 自然語音**（選用）：Gemini（`gemini-3.8-flash-tts`，需 Gemini Key），台灣國語口音語氣；失敗時自動退回手機內建語音
 - 手機內建語音會自動挑最自然的台灣口音語音；語速、語音選擇會記住
 - Android／iOS 鎖螢幕與通知列可控制播放（AI 語音時）
 - **🎤 跟讀模式**：AI 唸一句、孩子跟著唸，用 Chrome 語音辨識比對評分（⭐～⭐⭐⭐），唸對的字標綠、漏掉的標紅；三顆星自動接下一句（語音辨識由 Chrome 內建服務處理，聲音會送到 Google）
@@ -101,19 +101,18 @@ Homie 就是為這個場景專門打造的。
 | Gemini | 3.8 Flash（預設）| 日常作業，最推薦 | ~$0.0097（2027 起 ~$0.019） |
 | Gemini | 3.5 Flash-Lite | 最快、最省 | ~$0.0059 |
 | Gemini | 4 Hydrogen | 新一代、均衡 | ~$0.02 |
-| Gemini | 4 Carbon | 最強 | ~$0.026（2026-12-01 起 ~$0.05） |
-| Claude | Haiku 4.5 | 快速、最省 | ~$0.01 |
+| Gemini | 4 Carbon | 最強（免費 Key 不能用，需付費） | ~$0.026（2026-12-01 起 ~$0.05） |
+| Claude | Haiku 5.5 | 快速、最省 | ~$0.0013 |
 | Claude | Sonnet 5.5 | 均衡推薦 | ~$0.03 |
 | Claude | Opus 5.5 | 很強 | ~$0.05 |
-| Claude | Fable 5.1 | 最強、很貴 | ~$0.13 |
+| Claude | Fable 5.2 | 最強、很貴 | ~$0.10 |
 | OpenAI | GPT-6.1 Terra（預設）| 推薦、擅長看圖 | ~$0.01 |
 | OpenAI | GPT-6 Luna | 最快、最省 | ~$0.0013 |
 | OpenAI | GPT-6.2 Sol | 均衡 | ~$0.03 |
 | OpenAI | GPT-6.2 Astra | 最強、很貴 | ~$0.10 |
 
-> 估計方式：一次約 3,000 輸入、2,000 輸出 tokens（含思考），依 2026-11-19 官方價目表。實際每次花費會顯示在結果下方，設定裡可看本月累計。
+> 估計方式：一次約 3,000 輸入、2,000 輸出 tokens（含思考），依官方價目表（Gemini／OpenAI 2026-11-19、Claude 2026-11-24 查核）。實際每次花費會顯示在結果下方，設定裡可看本月累計。
 > 費用從你自己的供應商帳號扣，不經過本站。已公告的漲價（Gemini 4 Carbon 2026-12-01、Gemini 3.8 Flash 2027-01-01）會依日期自動套用到花費估算。
-> OpenAI 的語音模型 `gpt-4o-mini-tts` 將於 2027-01-06 停用，AI 語音建議改用 Gemini。
 
 ---
 
@@ -132,7 +131,7 @@ Homie 就是為這個場景專門打造的。
 - Gemini / Claude / OpenAI Vision API — 圖片辨識 + 解題（SSE 串流即時顯示）
 - 瀏覽器內 canvas 圖片壓縮（上傳前長邊縮至 1600px）
 - Web Speech API — 瀏覽器原生 TTS（免費）
-- Gemini / OpenAI TTS API — AI 自然語音（選用，逐句產生＋預先產生後兩句）
+- Gemini TTS API — AI 自然語音（選用，逐句產生＋預先產生後兩句）
 - Media Session API — 鎖螢幕／通知列播放控制
 - localStorage — 歷史紀錄暫存（最近 10 筆，文字 only）
 - marked.js + DOMPurify — Markdown 安全渲染
