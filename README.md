@@ -149,6 +149,16 @@ npm i jsdom dompurify && node test_homie.mjs
 
 ---
 
+## 授權
+
+© 2026 Vincent Lu。以 [GNU AGPL-3.0](./LICENSE)（或更新版本）授權。
+
+- 任何人都可以免費使用、修改、架在自己的網站上
+- 修改後的版本若放到網路上給別人用，必須用同樣的授權公開修改後的原始碼
+- 想用不同條件（例如不公開原始碼的商業用途）請先聯絡作者
+
+---
+
 ## 版本紀錄
 
 見 [CHANGELOG.md](./CHANGELOG.md)

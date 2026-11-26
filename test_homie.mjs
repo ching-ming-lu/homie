@@ -683,6 +683,10 @@ check('關閉設定面板', !doc.getElementById('settingsSheet').classList.conta
 // 金鑰提示卡
 win.localStorage.removeItem('homie_gemini_key');
 T.setProvider('gemini'); win.switchProvider('gemini', true);
+doc.getElementById('introHero').style.display = '';
+win.switchProvider('gemini', true);
+check('介紹區開著時不重複顯示金鑰提示卡', doc.getElementById('setupCard').style.display === 'none');
+win.dismissIntro();
 check('沒有金鑰時顯示「去設定」提示', doc.getElementById('setupCard').style.display === 'flex');
 doc.getElementById('apiKeyInput').value = 'AIza-new';
 win.saveApiKey();
@@ -1103,6 +1107,41 @@ await T.callReal('p', [], null);
 check('Fable 5.2 也開啟備援', fbB.model === 'claude-fable-5-2' && fbB.fallbacks === 'default' && fbH['anthropic-beta'] === 'server-side-fallback-2026-07-01');
 check('Fable 5.2 不送 thinking 參數', fbB.thinking === undefined);
 T.setProvider('gemini'); win.switchProvider('gemini', true);
+
+// ── 27. 免金鑰範例體驗、加到主畫面（v0.18.0）─────────
+win.localStorage.clear();
+const hwHistBefore = win.localStorage.getItem('homie_hw_history');
+const mkBefore = (await win.mkAll()).length;
+win.showDemo('hw');
+const hwR = doc.getElementById('hwResults');
+check('作業範例：顯示範例橫幅', !!hwR.querySelector('.demo-banner') && hwR.firstElementChild.classList.contains('demo-banner'));
+check('作業範例：1 題要訂正、1 題還沒寫', hwR.querySelector('.hw-summary').textContent === '1 題要訂正、1 題還沒寫', hwR.querySelector('.hw-summary').textContent);
+check('作業範例：沒有要呼叫 AI 的按鈕', ![...hwR.querySelectorAll('button')].some(b => /再練|拍照複查/.test(b.textContent)));
+check('作業範例：寫錯題有正確答案標記', hwR.querySelector('mark')?.textContent === '85');
+check('作業範例：空白題不直接寫出答案', !/73/.test(hwR.querySelector('.md-body').textContent));
+check('作業範例：不寫入歷史紀錄', win.localStorage.getItem('homie_hw_history') === hwHistBefore);
+check('作業範例：不寫入錯題本', (await win.mkAll()).length === mkBefore);
+check('看過範例就收合介紹區', doc.getElementById('introHero').style.display === 'none');
+win.showDemo('rd');
+check('繪本範例：11 句', win.document.querySelectorAll('#rdResults .para-segment').length === 11, String(win.document.querySelectorAll('#rdResults .para-segment').length));
+win.setReadMode('companion');
+const rdNotice = doc.getElementById('plNotice')?.textContent || '';
+check('繪本範例：智慧陪讀直接可用，不必呼叫 AI', !rdNotice.includes('產生陪讀內容'), rdNotice);
+check('繪本範例：不寫入歷史紀錄', win.localStorage.getItem('homie_rd_history') === null);
+check('繪本範例：顯示範例橫幅', !!doc.querySelector('#rdResults .demo-banner'));
+win.setReadMode('plain');
+win.stopTTS();
+check('設定卡有「先看範例」', [...doc.querySelectorAll('#setupCard button')].some(b => b.textContent === '先看範例'));
+check('沒有安裝事件時不顯示「加到主畫面」', doc.getElementById('introInstallBtn').style.display === 'none');
+const bip = new win.Event('beforeinstallprompt');
+let prompted = false;
+bip.prompt = () => { prompted = true; }; bip.userChoice = Promise.resolve({ outcome: 'accepted' });
+win.dispatchEvent(bip);
+check('Android 有安裝事件時顯示「加到主畫面」', doc.getElementById('introInstallBtn').style.display === 'inline-block' && doc.getElementById('installSec').style.display === 'block');
+await win.installApp();
+check('按下後跳出安裝、按鈕收起', prompted && doc.getElementById('introInstallBtn').style.display === 'none');
+check('設定裡有 AGPL 授權連結', [...doc.querySelectorAll('.set-ver a')].some(a => a.href.endsWith('/LICENSE')));
+check('LICENSE 是 AGPL v3 全文', fs.readFileSync(new URL('./LICENSE', import.meta.url), 'utf8').includes('GNU AFFERO GENERAL PUBLIC LICENSE') && fs.statSync(new URL('./LICENSE', import.meta.url)).size > 30000);
 
 // ── 22. 版本號一致 ───────────────────────────────────
 const ver = T.version();

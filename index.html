@@ -1,4 +1,9 @@
 <!DOCTYPE html>
+<!--
+  Homie 作業通 — Copyright (C) 2026 Vincent Lu
+  以 GNU Affero General Public License v3.0（或更新版本）授權，全文見 LICENSE。
+  https://github.com/sakuradigi/homie
+-->
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
@@ -36,8 +41,10 @@
   .header-actions { display: flex; gap: 8px; align-items: center; }
   .settings-btn { font-size: 13px; color: var(--primary-dark); background: #E8F8F5; border: 1px solid #A7E3DA; border-radius: 20px; padding: 5px 14px; cursor: pointer; font-family: inherit; }
   /* 還沒設定金鑰時的提示卡 */
-  .setup-card { max-width: 700px; margin: 16px auto 0; background: #FFF0F3; border: 1px solid #FFC9D4; border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: center; gap: 12px; font-size: 14px; color: #9F1239; }
-  .setup-card button { margin-left: auto; background: var(--accent); color: white; border: none; border-radius: 10px; padding: 9px 16px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: inherit; }
+  .setup-card { max-width: 700px; margin: 16px auto 0; background: #FFF0F3; border: 1px solid #FFC9D4; border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 14px; color: #9F1239; }
+  .setup-card-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+  .setup-card button { background: var(--accent); color: white; border: none; border-radius: 10px; padding: 9px 16px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: inherit; }
+  .setup-card button.setup-demo-btn { background: var(--card); color: #9F1239; border: 1px solid #FFC9D4; }
   /* 設定面板（底部滑出；桌機置中） */
   .sheet-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 209; }
   .sheet-bg.show { display: block; }
@@ -53,15 +60,27 @@
   .set-select { flex: 1 1 100%; width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 10px; font-size: 16px; background: var(--card); font-family: inherit; }
 
   /* Intro hero（首次造訪顯示，開始使用後收合） */
-  .intro-hero { background: linear-gradient(150deg, #E8F8F5 0%, #F7F9FC 55%, #FFF0F3 100%); border-bottom: 1px solid var(--border); text-align: center; padding: 36px 24px 32px; }
+  .intro-hero { background: linear-gradient(150deg, #E8F8F5 0%, #F7F9FC 55%, #FFF0F3 100%); border-bottom: 1px solid var(--border); text-align: center; padding: 32px 20px 28px; }
   .intro-hero h1 { font-size: 25px; line-height: 1.4; margin-bottom: 10px; }
   .intro-hero h1 em { font-style: normal; color: var(--primary); }
-  .intro-hero p { font-size: 14px; color: var(--muted); max-width: 480px; margin: 0 auto 18px; }
-  .intro-chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
-  .intro-chips span { font-size: 12px; color: var(--muted); background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; }
-  .intro-actions { display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; }
-  .intro-start { background: var(--primary); color: white; border: none; border-radius: 12px; padding: 13px 28px; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(13,148,136,0.35); }
-  .intro-more { font-size: 14px; color: var(--primary); text-decoration: none; }
+  .intro-hero > p { font-size: 14px; color: var(--muted); max-width: 480px; margin: 0 auto 18px; line-height: 1.6; }
+  .intro-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 640px; margin: 0 auto 20px; }
+  .intro-step { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 10px; display: flex; flex-direction: column; gap: 3px; text-align: center; }
+  .intro-step b { font-size: 13px; color: var(--text); }
+  .intro-step span { font-size: 12px; color: var(--muted); }
+  .intro-actions { display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; }
+  .intro-start { background: var(--primary); color: white; border: none; border-radius: 12px; padding: 12px 24px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; box-shadow: 0 4px 14px rgba(13,148,136,0.35); }
+  .intro-sec-btn { background: var(--card); color: var(--primary); border: 1.5px solid #A7E3DA; border-radius: 12px; padding: 11px 18px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .intro-more { font-size: 14px; color: var(--primary); text-decoration: none; padding: 6px 4px; }
+  .intro-demo-btns { display: none; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+  .intro-demo-btns.open { display: flex; }
+  .intro-demo-pick { background: var(--card); color: var(--text); border: 1.5px solid var(--border); border-radius: 10px; padding: 10px 16px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .intro-demo-pick:hover { border-color: var(--primary); background: #E8F8F5; color: var(--primary); }
+  /* 範例橫幅、加到主畫面 */
+  .demo-banner { background: linear-gradient(135deg, #E8F8F5 0%, #F0FDFA 100%); border: 1px solid #A7E3DA; border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; line-height: 1.6; color: #0F766E; }
+  .demo-banner-text { flex: 1; min-width: 200px; }
+  .demo-banner-btn { margin-left: auto; background: var(--primary); color: white; border: none; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: inherit; }
+  .install-btn { background: #E8F8F5; color: var(--primary); border: 1.5px solid #A7E3DA; border-radius: 10px; padding: 10px 16px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; width: 100%; }
 
   /* API Key Banner */
   .api-banner { background: #E8F8F5; border: 1px solid #A7E3DA; margin: 20px 24px 0; border-radius: var(--radius); padding: 14px 18px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -362,6 +381,12 @@
       main { padding-bottom: calc(170px + env(safe-area-inset-bottom)); }
     }
   }
+  @media (max-width: 600px) {
+    .intro-steps { grid-template-columns: 1fr; gap: 8px; }
+    .intro-step { flex-direction: row; align-items: center; justify-content: space-between; text-align: left; padding: 10px 14px; }
+    .setup-card-actions { width: 100%; justify-content: flex-end; }
+    .demo-banner-btn { width: 100%; }
+  }
 </style>
 </head>
 <body>
@@ -377,20 +402,31 @@
 <!-- 首次造訪介紹區（用過即自動收合） -->
 <section class="intro-hero" id="introHero">
   <h1>陪孩子寫作業，<em>不再靠猜</em></h1>
-  <p>拍張照，AI 逐題批閱附解說；繪本拍下來，自動唸給孩子聽。免費、不用註冊、照片不經任何伺服器。</p>
-  <div class="intro-chips">
-    <span>✓ 免費</span><span>✓ 不用註冊</span><span>✓ 開源</span>
+  <p>拍張照，AI 逐題批閱附解說；繪本拍下來，自動唸給孩子聽。免費開源、不用註冊、照片不經任何伺服器。</p>
+  <div class="intro-steps">
+    <div class="intro-step"><b>① 先看範例</b><span>不用設定</span></div>
+    <div class="intro-step"><b>② 設定 AI 金鑰</b><span>自己的金鑰，只存在手機</span></div>
+    <div class="intro-step"><b>③ 加到主畫面</b><span>像 App 一樣用</span></div>
   </div>
   <div class="intro-actions">
-    <button class="intro-start" onclick="dismissIntro()">開始使用 ↓</button>
+    <button type="button" class="intro-start" id="introDemoToggle" aria-expanded="false" onclick="toggleIntroDemo()">👀 先看範例</button>
+    <button type="button" class="intro-sec-btn" onclick="openKeyGuide()">🔑 開始設定</button>
+    <button type="button" class="intro-sec-btn" id="introInstallBtn" onclick="installApp()" style="display:none">📲 加到主畫面</button>
     <a class="intro-more" href="about.html">了解更多 →</a>
+  </div>
+  <div class="intro-demo-btns" id="introDemoBtns">
+    <button type="button" class="intro-demo-pick" onclick="showDemo('hw')">📝 作業批改範例</button>
+    <button type="button" class="intro-demo-pick" onclick="showDemo('rd')">📖 繪本朗讀範例</button>
   </div>
 </section>
 
 <!-- 還沒設定金鑰時才出現 -->
 <div class="setup-card" id="setupCard" style="display:none">
   <span>🔑 第一次使用，先設定 AI 金鑰</span>
-  <button onclick="openSettings()">去設定</button>
+  <div class="setup-card-actions">
+    <button type="button" class="setup-demo-btn" onclick="showDemo('hw')">先看範例</button>
+    <button type="button" onclick="openKeyGuide()">去設定</button>
+  </div>
 </div>
 
 <!-- Hidden file inputs (iOS-safe) -->
@@ -544,7 +580,7 @@
   <div class="co-handle"></div>
   <div class="sheet-head"><b>⚙️ 設定</b><button class="sheet-close" onclick="closeSettings()" aria-label="關閉">✕</button></div>
 
-  <section class="set-sec">
+  <section class="set-sec" id="keySec">
     <h3>🔑 AI 金鑰</h3>
     <div class="provider-tabs">
       <button class="provider-tab active" onclick="switchProvider('gemini')" id="ptab-gemini">Gemini</button>
@@ -613,8 +649,14 @@
     </div>
   </section>
 
+  <section class="set-sec" id="installSec" style="display:none">
+    <h3>📲 加到主畫面</h3>
+    <button type="button" class="install-btn" id="setInstallBtn" onclick="installApp()" style="display:none">📲 加到主畫面</button>
+    <p class="set-hint" id="iosInstallHint" style="display:none;margin-top:0">iPhone：用 Safari 打開，按分享鍵 → 加入主畫面。</p>
+  </section>
+
   <button class="action-btn primary" onclick="closeSettings()">完成</button>
-  <p class="set-ver">Homie <span id="appVersion"></span>・<a href="https://github.com/sakuradigi/homie/blob/main/CHANGELOG.md" target="_blank" rel="noopener">更新紀錄</a></p>
+  <p class="set-ver">Homie <span id="appVersion"></span>・<a href="https://github.com/sakuradigi/homie/blob/main/CHANGELOG.md" target="_blank" rel="noopener">更新紀錄</a>・<a href="https://github.com/sakuradigi/homie/blob/main/LICENSE" target="_blank" rel="noopener">AGPL-3.0 開源</a></p>
 </div>
 
 <!-- 照片旋轉／裁切 -->
@@ -676,7 +718,7 @@
 <script>
 // ===== 版本 =====
 // 每次發版要同步：這裡、sw.js 的 CACHE、CHANGELOG.md 最上面那版（test_homie.mjs 會檢查三者一致）
-const APP_VERSION = 'v0.17.3';
+const APP_VERSION = 'v0.18.0';
 
 // ===== STATE =====
 let hwImages = [], rdImages = [];
@@ -835,7 +877,9 @@ function closeSettings() {
 // 目前的供應商還沒存金鑰，就在最上面提醒
 function updateSetupCard() {
   const card = document.getElementById('setupCard');
-  if (card) card.style.display = getCurrentKey() ? 'none' : 'flex';
+  // 介紹區還開著時，它已經有「開始設定」，不重複提醒
+  const heroOpen = document.getElementById('introHero')?.style.display !== 'none';
+  if (card) card.style.display = getCurrentKey() || heroOpen ? 'none' : 'flex';
 }
 
 function getChildGrade() {
@@ -845,7 +889,113 @@ function getChildGrade() {
 function dismissIntro() {
   localStorage.setItem('homie_intro_seen', '1');
   document.getElementById('introHero').style.display = 'none';
+  updateSetupCard();
 }
+
+
+// ===== 免金鑰範例體驗 =====
+// 第一次打開、還沒設定金鑰的家長，先看 App 批改後長什麼樣子。範例內容由 Gemini 4 Hydrogen 起草、人工校對，全部原創。
+// 範例不寫入歷史紀錄與錯題本。
+const DEMO_HW_TEXT = "## 逐題說明\n\n第 1 題：答案是 59。個位和十位都對齊算得很準確，很棒喔！\n\n第 2 題：答案是 44。不退位減法算得又快又穩，繼續保持！\n\n第 3 題：這題錯在「進位忘記加 1」囉！正確答案是 <mark>85</mark>。直式計算時，先算個位 8 ＋ 7 ＝ 15，個位寫 5 並往十位進 1；接著算十位，要把 4 ＋ 3 再加上進位的 1，4 ＋ 3 ＋ 1 ＝ 8，合起來就是 85。小朋友十位只算了 4 ＋ 3 ＝ 7，才會寫成 75，下次在十位上方寫個小小的 1 提醒自己就不會漏掉囉！\n\n第 4 題：答案是 44。這題有向十位借 1 再減，退位觀念很清楚呢！\n\n第 5 題：答案是 82。這題的進位 1 就有記得加上去，非常細心！\n\n第 6 題：這題還沒寫，先看上面的提示自己想想看\n\n```json\n{\n  \"subject\": \"數學\",\n  \"items\": [\n    {\n      \"no\": \"第1題\",\n      \"question\": \"34 + 25 =\",\n      \"status\": \"correct\",\n      \"child\": \"59\",\n      \"answer\": \"59\",\n      \"why\": \"個位 4 + 5 = 9，十位 3 + 2 = 5，計算完全正確。\",\n      \"concept\": \"二位數不進位加法\",\n      \"hints\": []\n    },\n    {\n      \"no\": \"第2題\",\n      \"question\": \"86 - 42 =\",\n      \"status\": \"correct\",\n      \"child\": \"44\",\n      \"answer\": \"44\",\n      \"why\": \"個位 6 - 2 = 4，十位 8 - 4 = 4，計算完全正確。\",\n      \"concept\": \"二位數不退位減法\",\n      \"hints\": []\n    },\n    {\n      \"no\": \"第3題\",\n      \"question\": \"48 + 37 =\",\n      \"status\": \"wrong\",\n      \"child\": \"75\",\n      \"answer\": \"85\",\n      \"why\": \"個位 8 + 7 = 15 有正確寫下 5，但十位計算 4 + 3 = 7 時，忘記加上進位的 1。\",\n      \"concept\": \"二位數進位加法\",\n      \"hints\": [\n        \"先算個位的 8 + 7 是多少？超過 10 的時候要記得進位喔！\",\n        \"個位寫 5、進 1 到十位後，十位要把 4、3 和進位的 1 全部加起來。\"\n      ]\n    },\n    {\n      \"no\": \"第4題\",\n      \"question\": \"72 - 28 =\",\n      \"status\": \"correct\",\n      \"child\": \"44\",\n      \"answer\": \"44\",\n      \"why\": \"個位 2 不夠減 8，有向十位借 1 變成 12 - 8 = 4，十位 6 - 2 = 4，完全正確。\",\n      \"concept\": \"二位數退位減法\",\n      \"hints\": []\n    },\n    {\n      \"no\": \"第5題\",\n      \"question\": \"63 + 19 =\",\n      \"status\": \"correct\",\n      \"child\": \"82\",\n      \"answer\": \"82\",\n      \"why\": \"個位 3 + 9 = 12 寫 2 進 1，十位 6 + 1 + 1 = 8，進位計算正確。\",\n      \"concept\": \"二位數進位加法\",\n      \"hints\": []\n    },\n    {\n      \"no\": \"第6題\",\n      \"question\": \"小美原本有 45 張貼紙，媽媽又買給她 28 張，小美現在總共有幾張貼紙？\",\n      \"status\": \"blank\",\n      \"child\": \"\",\n      \"answer\": \"73\",\n      \"why\": \"這題是文字應用題，孩子目前還沒作答，可以先引導他把題意轉成算式。\",\n      \"concept\": \"二位數加法應用題\",\n      \"hints\": [\n        \"先圈出題目裡的兩個數字，想想看「又買給她」貼紙是變多還是變少？\",\n        \"把原本的 45 張和媽媽買的 28 張合起來，列出加法算式後用直式算算看（記得個位滿 10 要進位喔）。\"\n      ]\n    }\n  ]\n}\n```";
+const DEMO_RD_TEXT = "===第1頁===\n小刺蝟球球最討厭太陽下山的時候，因為森林裡會變得黑漆漆的。\n每次關上小木屋的燈，他都會把身體捲成一顆圓滾滾的小球。\n窗外風吹過樹葉的沙沙聲，聽起來就像有大怪獸在走路。\n球球抱著被子小聲地問：「媽媽，我可以開著燈睡覺嗎？」\n===第2頁===\n刺蝟媽媽溫柔地笑著說：「我們去陽台看個小秘密吧！」\n他們一起抬頭看，黑黑的天空上竟然閃著好多亮晶晶的小星星。\n突然，一隻發光的螢火蟲飛過來，提著小燈籠在草叢裡跳舞。\n球球驚訝地張大嘴巴，忘記自己原本正害怕著呢！\n===第3頁===\n原來夜晚不是來抓人的大怪獸，而是大家一起休息的溫柔被子。\n球球慢慢伸直背上的小刺，深吸了一口涼涼的晚風。\n回到溫暖的小床上，球球安心地閉上眼睛，夢見自己和螢火蟲一起去旅行。";
+const DEMO_RD_NOTES = [{"after": 2, "type": "ask", "text": "你晚上睡覺關燈的時候，會不會也像球球一樣，覺得房間裡有什麼聲音呢？"}, {"after": 3, "type": "talk", "text": "不敢睡覺的時候勇敢告訴爸爸媽媽，是一件很棒又很誠實的事喔！"}, {"after": 6, "type": "ask", "text": "猜猜看，除了星星和螢火蟲，晚上還有誰會在森林裡發亮或活動呢？"}, {"after": 8, "type": "talk", "text": "「溫柔的被子」聽起來好舒服，原來換個想法看黑夜，就沒那麼可怕了。"}, {"after": 10, "type": "ask", "text": "如果你也能和螢火蟲一起去旅行，你最想飛去哪裡看看呢？"}];
+const DEMO_RD_COUNT = 11;   // 範例故事切出來的句數，陪讀筆記的 after 依此編號
+
+function toggleIntroDemo() {
+  const box = document.getElementById('introDemoBtns');
+  const open = box.classList.toggle('open');
+  document.getElementById('introDemoToggle').setAttribute('aria-expanded', String(open));
+}
+
+function makeDemoBanner(text) {
+  const bar = document.createElement('div');
+  bar.className = 'demo-banner';
+  const msg = document.createElement('span');
+  msg.className = 'demo-banner-text';
+  msg.textContent = text;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'demo-banner-btn';
+  btn.textContent = '🔑 開始設定';
+  btn.onclick = openKeyGuide;
+  bar.append(msg, btn);
+  return bar;
+}
+
+function showDemo(prefix) {
+  dismissIntro();
+  if (prefix === 'hw') {
+    switchTab('homework');
+    cancelReview();
+    const resultsEl = document.getElementById('hwResults');
+    resultsEl.innerHTML = '';
+    renderHomeworkResult(DEMO_HW_TEXT, '', false, null, { demo: true });
+    resultsEl.prepend(makeDemoBanner('👀 這是範例：二年級數學學習單的批改結果。設定金鑰後，就能拍你家孩子的作業。'));
+    scrollToResults(resultsEl);
+    return;
+  }
+  switchTab('reading');
+  currentRdHistoryTs = null;   // 範例不是歷史紀錄，陪讀內容不存回去
+  renderReadingResult(DEMO_RD_TEXT, 'zh');
+  if (currentSegments.length === DEMO_RD_COUNT) {
+    companionNotes = DEMO_RD_NOTES;
+    buildPlaylist();
+    updateModeUI();
+    showPlayerNotice('');
+  }
+  const resultsEl = document.getElementById('rdResults');
+  resultsEl.prepend(makeDemoBanner('👀 這是範例繪本。按 ▶ 播放，或切到「🧑‍🏫 智慧陪讀」聽小老師講解。用的是手機內建語音，設定金鑰後可換 AI 自然語音。'));
+  scrollToResults(resultsEl);
+}
+
+// 捲到結果區，留出上方固定標題列的高度，範例橫幅才不會被蓋住
+function scrollToResults(el) {
+  const top = el.getBoundingClientRect().top + window.scrollY - 90;
+  window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+}
+
+function openKeyGuide() {
+  openSettings();
+  setTimeout(() => document.getElementById('keySec')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+}
+
+// ===== 加到主畫面 =====
+// Android Chrome 會發 beforeinstallprompt，留著讓家長按按鈕時再跳出安裝；iPhone 沒有這個事件，只顯示操作說明
+let deferredInstallPrompt = null;
+
+function isStandaloneMode() {
+  return window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+function isIos() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function updateInstallUI() {
+  const standalone = isStandaloneMode();
+  const canPrompt = !!deferredInstallPrompt && !standalone;
+  const iosHint = !canPrompt && !standalone && isIos();
+  document.getElementById('introInstallBtn').style.display = canPrompt ? 'inline-block' : 'none';
+  document.getElementById('setInstallBtn').style.display = canPrompt ? 'block' : 'none';
+  document.getElementById('iosInstallHint').style.display = iosHint ? 'block' : 'none';
+  document.getElementById('installSec').style.display = canPrompt || iosHint ? 'block' : 'none';
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  updateInstallUI();
+});
+window.addEventListener('appinstalled', () => { deferredInstallPrompt = null; updateInstallUI(); });
+
+async function installApp() {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  try { await deferredInstallPrompt.userChoice; } catch (e) {}
+  deferredInstallPrompt = null;
+  updateInstallUI();
+}
+updateInstallUI();
 
 // ===== API KEY =====
 function saveApiKey() {
@@ -1339,7 +1489,8 @@ status 只能是 correct（答對）、wrong（寫錯）、blank（沒寫）。�
 }
 
 // ts：這份結果在歷史紀錄裡的時間戳（錯題本、訂正複查用來對應題目）
-function renderHomeworkResult(text, usedHint, truncated, ts) {
+// opts.demo：免金鑰範例，拿掉要呼叫 AI 的按鈕（再練、拍照複查）
+function renderHomeworkResult(text, usedHint, truncated, ts, opts = {}) {
   const resultsEl = document.getElementById('hwResults');
   const { md, data } = splitHomework(text);
   currentHw = { data, ts: ts || Date.now() };
@@ -1377,13 +1528,13 @@ function renderHomeworkResult(text, usedHint, truncated, ts) {
     sum.textContent = !todo.length ? `🎉 ${data.items.length} 題全對！`
       : [wrong && `${wrong} 題要訂正`, blank && `${blank} 題還沒寫`].filter(Boolean).join('、');
     resultsEl.appendChild(sum);
-    todo.forEach(it => resultsEl.appendChild(makeItemCard(it, 'result', [['✏️ 再練 3 題', () => openPractice({ ...it, subject: data.subject })]])));
+    todo.forEach(it => resultsEl.appendChild(makeItemCard(it, 'result', opts.demo ? [] : [['✏️ 再練 3 題', () => openPractice({ ...it, subject: data.subject })]])));
     const share = document.createElement('button');
     share.className = 'mk-btn';
     share.style.margin = '0 0 10px';
     share.textContent = '📤 分享結果（傳 LINE 給家人或老師）';
     share.onclick = shareResult;
-    if (todo.length) {
+    if (todo.length && !opts.demo) {
       const rv = document.createElement('button');
       rv.className = 'action-btn primary';
       rv.style.margin = '4px 0 8px';
