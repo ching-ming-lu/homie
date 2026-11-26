@@ -1143,6 +1143,26 @@ check('按下後跳出安裝、按鈕收起', prompted && doc.getElementById('in
 check('設定裡有 AGPL 授權連結', [...doc.querySelectorAll('.set-ver a')].some(a => a.href.endsWith('/LICENSE')));
 check('LICENSE 是 AGPL v3 全文', fs.readFileSync(new URL('./LICENSE', import.meta.url), 'utf8').includes('GNU AFFERO GENERAL PUBLIC LICENSE') && fs.statSync(new URL('./LICENSE', import.meta.url)).size > 30000);
 
+// ── 28. 家長定位、金鑰教學（v0.19.0）────────────────
+win.localStorage.removeItem('homie_gemini_key');
+T.setProvider('gemini'); win.switchProvider('gemini', true);
+const kg = doc.getElementById('keyGuide');
+check('Gemini 沒有金鑰時自動展開申請教學', kg.style.display === '' && kg.open === true);
+check('教學連到 Google AI Studio 金鑰頁', kg.querySelector('a').href === 'https://aistudio.google.com/app/apikey');
+check('教學附隱私提醒（遮住姓名）', kg.textContent.includes('遮住孩子的姓名'));
+win.localStorage.setItem('homie_gemini_key', 'AIza-x'); win.switchProvider('gemini', true);
+check('存了金鑰教學就收起', kg.open === false);
+win.localStorage.setItem('homie_claude_key', 'sk-ant-x');
+T.setProvider('claude'); win.switchProvider('claude', true);
+check('其他供應商不顯示 Gemini 教學', kg.style.display === 'none');
+win.openKeyGuide();
+check('開始設定不會替家長切換供應商', win.localStorage.getItem('homie_provider') === 'claude');
+win.closeSettings();
+T.setProvider('gemini'); win.switchProvider('gemini', true);
+const aboutSrc = fs.readFileSync(new URL('./about.html', import.meta.url), 'utf8');
+check('介紹頁不再宣稱不會被拿去訓練', !aboutSrc.includes('不該被拿去訓練模型') && !aboutSrc.includes('不用信用卡') && !aboutSrc.includes('不需要信用卡'));
+check('介紹頁說明是給家長用的工具', aboutSrc.includes('給家長用的工具'));
+
 // ── 22. 版本號一致 ───────────────────────────────────
 const ver = T.version();
 const swSrc = fs.readFileSync(new URL('./sw.js', import.meta.url), 'utf8');

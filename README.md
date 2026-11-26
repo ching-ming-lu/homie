@@ -1,6 +1,8 @@
 # Homie 作業通 🎒
 
 > 幫助台灣國小家長用 AI 檢查作業、朗讀繪本的網頁工具
+>
+> **使用對象是家長**：由家長申請 AI 金鑰、操作 App；朗讀、陪讀、跟讀請在家長陪同下讓孩子使用。
 
 🔗 **立即使用**：https://sakuradigi.github.io/homie
 
@@ -80,7 +82,7 @@ Homie 就是為這個場景專門打造的。
 
 **Step 1 — 申請 API Key（三家擇一）**
 
-- Gemini（推薦入門）：[Google AI Studio](https://aistudio.google.com/app/apikey)，免費方案每分鐘 60 次請求，不需信用卡
+- Gemini（推薦入門）：[Google AI Studio](https://aistudio.google.com/app/apikey)，有免費額度（額度以 Google 公布為準）
 - Claude：[Anthropic Console](https://console.anthropic.com/)
 - OpenAI：[OpenAI Platform](https://platform.openai.com/api-keys)
 
@@ -117,6 +119,8 @@ Homie 就是為這個場景專門打造的。
 ---
 
 ## 隱私
+
+- **免費 Gemini 金鑰**：Google 免費方案可能用送出的內容改善產品、可能有人工審閱，拍照前請遮住孩子的姓名與學校；Google 付費方案、Claude、OpenAI 預設不拿 API 資料訓練模型
 
 - 圖片直接從你的瀏覽器傳送至你選擇的 AI 供應商（Google / Anthropic / OpenAI），**不經過本站任何伺服器**
 - API Key 存在你瀏覽器的 localStorage，不上傳
