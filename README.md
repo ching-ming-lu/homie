@@ -4,7 +4,7 @@
 >
 > **使用對象是家長**：由家長申請 AI 金鑰、操作 App；朗讀、陪讀、跟讀請在家長陪同下讓孩子使用。
 
-🔗 **立即使用**：https://sakuradigi.github.io/homie
+🔗 **立即使用**：https://ching-ming-lu.github.io/homie
 
 不需要安裝任何 App，手機瀏覽器直接開啟即可。
 
@@ -173,4 +173,4 @@ npm i jsdom dompurify && node test_homie.mjs
 
 Vincent Lu — 為自己孩子做的工具，開源分享給有同樣需求的家長。
 
-如有 bug 或功能建議，歡迎開 [Issue](https://github.com/sakuradigi/homie/issues)。
+如有 bug 或功能建議，歡迎開 [Issue](https://github.com/ching-ming-lu/homie/issues)。

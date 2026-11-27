@@ -18,6 +18,13 @@
 - 每個版本打 Git 標籤（`vX.Y.Z`，`deploy.sh` 推送後會自動打），可用 `git checkout vX.Y.Z` 取回任一版。
 - `deploy.sh` 會在 CHANGELOG.md 未更新時擋下部署。
 
+## 兩個版本（2026-11-27 起）
+
+- **自用版**：`sakuradigi/homie`（git remote `origin`），https://sakuradigi.github.io/homie 。`deploy.sh` 推到這裡，Vincent 先在手機上試用。
+- **對外穩定版**：`ching-ming-lu/homie`（git remote `public`），https://ching-ming-lu.github.io/homie 。作品集連這個。
+- 兩邊程式碼一樣。自用版確認沒問題、Vincent 同意後，才把同一個版本（commit 與 tag）推到 `public`。推 `public` 要先 `gh auth switch --user ching-ming-lu`，推完切回 `sakuradigi`。
+- 對外連結（原始碼、授權、更新紀錄、回報問題）一律指向對外版 repo。
+
 ## 架構原則（不可違反）
 
 - 純前端單檔架構：零後端、零資料庫、零 build step。不拆分 CSS/JS、不引入框架。
